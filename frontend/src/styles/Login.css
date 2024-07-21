@@ -1,0 +1,46 @@
+.container {
+  width: 70%;
+  margin: 0 auto;
+}
+
+.heading {
+  color: blue;
+}
+
+.innerContainer {
+  border: 2px solid blue;
+  border-radius: 5px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 25px;
+}
+
+.input {
+  height: 30px;
+}
+
+button {
+  background: blue;
+  color: white;
+  height: 35px;
+  border: none;
+  cursor: pointer;
+}
+
+.noAccount {
+  display: flex;
+  align-items: center;
+  margin: auto;
+  gap: 6px;
+  > a {
+    text-decoration: none;
+    cursor: pointer;
+  }
+}
+
+.googleBtnContainer {
+  display: flex;
+  justify-content: center;
+}

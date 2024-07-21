@@ -1,0 +1,50 @@
+.main {
+  height: 50px;
+  background: blue;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.list {
+  display: flex;
+  margin: 0 15px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  width: 100%;
+  > div > a {
+    text-decoration: none;
+    color: white;
+  }
+}
+
+.beforeAuth {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  > div > a {
+    text-decoration: none;
+    color: white;
+  }
+}
+
+.loginBtn {
+  background-color: white;
+  border-radius: 6px;
+  height: 20px;
+  cursor: pointer;
+  > a {
+    color: blue !important;
+    padding: 5px 8px;
+  }
+}
+
+.logoutbtn {
+  padding: 5px 8px;
+  color: white;
+  background: red;
+  border-radius: 5px;
+  cursor: pointer;
+}

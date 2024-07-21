@@ -1,0 +1,61 @@
+.addBtn {
+  background: blue !important;
+  color: white !important;
+  border-radius: 5px;
+  margin: 40px 0 0 40px !important;
+}
+
+.dashContainer {
+  padding: 0;
+  width: 100%;
+  margin: 0;
+}
+
+.dashHeading {
+  color: white;
+  background-color: blue;
+  margin: 6px !important;
+  padding: 4px;
+}
+
+.tableContainer {
+  width: 100%;
+}
+
+.innerDashContainer {
+  margin: 40px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 25px;
+}
+
+.actionBtnContainer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.deleteBtn {
+  background-color: red;
+  color: white;
+  border-radius: 5px;
+}
+
+.editBtn {
+  background-color: rgb(24, 159, 204);
+  color: white;
+  border-radius: 5px;
+}
+
+.viewBtn {
+  background-color: blue;
+  color: white;
+  border-radius: 5px;
+}
+
+.dashPaper {
+  padding: 6px;
+}
