@@ -8,10 +8,8 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const login = (token) => {
-    console.log("trying to login with token:", token);
     localStorage.setItem("token", token);
     const storedToken = localStorage.getItem("token");
-    console.log("Token stored in localStorage:", storedToken);
     setIsLoggedIn(!!storedToken);
   };
 
@@ -22,7 +20,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("Checking localStorage for token on mount:", token, !!token);
     setIsLoggedIn(!!token);
   }, []);
 
