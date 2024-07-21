@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js",
-    "migrate": "node migrations/migrate.js",
+    "migrate": "node migrations/migrate.mjs",
     "build" : "npm install && npm run migrate && npm run build"
   },
   "keywords": [],
