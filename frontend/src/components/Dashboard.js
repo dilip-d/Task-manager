@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { fetchTasks, createTask, deleteTask, updateTask } from "../api/taskApi";
 import {
   Button,
@@ -14,6 +15,8 @@ import {
 } from "@mui/material";
 import "../styles/Dashboard.css";
 
+const ItemType = "TASK";
+
 const formatDateTime = (dateString) => {
   const date = new Date(dateString);
   const options = {
@@ -25,6 +28,102 @@ const formatDateTime = (dateString) => {
   const time = date.toLocaleTimeString([], options);
   const formattedDate = date.toLocaleDateString();
   return `${formattedDate} ${time}`;
+};
+
+const Task = ({
+  task,
+  index,
+  moveTask,
+  handleDelete,
+  handleOpenEdit,
+  handleOpenView,
+}) => {
+  const [, ref] = useDrag({
+    type: ItemType,
+    item: { id: task.id, index, columnId: task.status },
+  });
+
+  const [, drop] = useDrop({
+    accept: ItemType,
+    hover: (draggedItem) => {
+      if (draggedItem.index !== index || draggedItem.columnId !== task.status) {
+        moveTask(draggedItem.index, index, draggedItem.columnId, task.status);
+        draggedItem.index = index;
+        draggedItem.columnId = task.status;
+      }
+    },
+  });
+
+  return (
+    <div
+      ref={(node) => ref(drop(node))}
+      style={{ margin: "8px", padding: "1px", ...task.style }}
+    >
+      <Paper sx={{ padding: "6px" }}>
+        <p style={{ fontWeight: 700 }}>{task.title}</p>
+        <p>{task.description}</p>
+        <p>Created at: {formatDateTime(task.createdAt)}</p>
+        <div className="actionBtnContainer">
+          <button className="deleteBtn" onClick={() => handleDelete(task)}>
+            Delete
+          </button>
+          <button className="editBtn" onClick={() => handleOpenEdit(task)}>
+            Edit
+          </button>
+          <button className="viewBtn" onClick={() => handleOpenView(task)}>
+            View details
+          </button>
+        </div>
+      </Paper>
+    </div>
+  );
+};
+
+const Column = ({
+  columnId,
+  column,
+  moveTask,
+  handleDelete,
+  handleOpenEdit,
+  handleOpenView,
+}) => {
+  const [{ isOver }, drop] = useDrop({
+    accept: ItemType,
+    drop: (item) => {
+      const { index, columnId: sourceColumnId } = item;
+      moveTask(index, columnId, sourceColumnId, columnId);
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
+
+  return (
+    <Grid item xs={4} key={columnId} className="tableContainer">
+      <Paper
+        className="dashPaper"
+        ref={drop}
+        style={{ backgroundColor: isOver ? "#e0e0e0" : "white" }}
+      >
+        <Typography className="dashHeading" variant="h6">
+          {column.name}
+        </Typography>
+        <div>
+          {column.items.map((task, index) => (
+            <Task
+              key={task.id}
+              task={task}
+              index={index}
+              moveTask={moveTask}
+              handleDelete={handleDelete}
+              handleOpenEdit={handleOpenEdit}
+              handleOpenView={handleOpenView}
+            />
+          ))}
+        </div>
+      </Paper>
+    </Grid>
+  );
 };
 
 const Dashboard = () => {
@@ -160,114 +259,103 @@ const Dashboard = () => {
     }
   };
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-    const { source, destination } = result;
+  const moveTask = async (
+    dragIndex,
+    hoverIndex,
+    sourceColumnId,
+    targetColumnId
+  ) => {
+    const sourceColumn = columns[sourceColumnId];
+    const destColumn = columns[targetColumnId];
 
-    if (source.droppableId !== destination.droppableId) {
-      const sourceColumn = columns[source.droppableId];
-      const destColumn = columns[destination.droppableId];
-      const sourceItems = [...sourceColumn.items];
-      const destItems = [...destColumn.items];
-      const [removed] = sourceItems.splice(source.index, 1);
-      removed.status = destination.droppableId;
-      destItems.splice(destination.index, 0, removed);
+    const sourceItems = [...sourceColumn.items];
+    const destItems = [...destColumn.items];
+
+    if (sourceColumnId === targetColumnId) {
+      const [removed] = sourceItems.splice(dragIndex, 1);
+      sourceItems.splice(hoverIndex, 0, removed);
+
       setColumns({
         ...columns,
-        [source.droppableId]: {
+        [sourceColumnId]: {
           ...sourceColumn,
           items: sourceItems,
         },
-        [destination.droppableId]: {
-          ...destColumn,
-          items: destItems,
-        },
       });
+
+      return;
+    }
+
+    const [removed] = sourceItems.splice(dragIndex, 1);
+    removed.status = targetColumnId;
+
+    if (destItems.length === 0) {
+      destItems.push(removed);
     } else {
-      const column = columns[source.droppableId];
-      const copiedItems = [...column.items];
-      const [removed] = copiedItems.splice(source.index, 1);
-      copiedItems.splice(destination.index, 0, removed);
+      destItems.splice(hoverIndex, 0, removed);
+    }
+
+    const updatedTask = {
+      title: removed.title,
+      description: removed.description,
+      status: targetColumnId,
+    };
+
+    setColumns({
+      ...columns,
+      [sourceColumnId]: {
+        ...sourceColumn,
+        items: sourceItems,
+      },
+      [targetColumnId]: {
+        ...destColumn,
+        items: destItems,
+      },
+    });
+
+    try {
+      await updateTask(removed.id, updatedTask);
+    } catch (error) {
+      console.error("Error updating task status", error);
+
       setColumns({
         ...columns,
-        [source.droppableId]: {
-          ...column,
-          items: copiedItems,
+        [sourceColumnId]: {
+          ...sourceColumn,
+          items: sourceItems,
+        },
+        [targetColumnId]: {
+          ...destColumn,
+          items: destItems.filter((item) => item.id !== removed.id),
         },
       });
     }
   };
 
   return (
-    <div className="dashContainer">
-      <Button className="addBtn" onClick={handleOpenAdd}>
-        Add Task
-      </Button>
-      <div className="innerDashContainer">
-        <DragDropContext onDragEnd={onDragEnd}>
-          {Object.entries(columns).map(([columnId, column]) => (
-            <Grid item xs={4} key={columnId} className="tableContainer">
-              <Paper className="dashPaper">
-                <Typography className="dashHeading" variant="h6">
-                  {column.name}
-                </Typography>
-                <Droppable droppableId={columnId}>
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef}>
-                      {column.items.map((item, index) => (
-                        <Draggable
-                          key={item.id}
-                          draggableId={item.id}
-                          index={index}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                            >
-                              <Paper style={{ margin: "8px", padding: "16px" }}>
-                                <p style={{ fontWeight: 700 }}>{item.title}</p>
-                                <p>{item.description}</p>
-                                <p>
-                                  Created at: {formatDateTime(item.createdAt)}
-                                </p>
-                                <div className="actionBtnContainer">
-                                  <button
-                                    className="deleteBtn"
-                                    onClick={async () => {
-                                      await handleDelete(item);
-                                    }}
-                                  >
-                                    Delete
-                                  </button>
-                                  <button
-                                    className="editBtn"
-                                    onClick={() => handleOpenEdit(item)}
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    className="viewBtn"
-                                    onClick={() => handleOpenView(item)}
-                                  >
-                                    View details
-                                  </button>
-                                </div>
-                              </Paper>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </Paper>
-            </Grid>
-          ))}
-        </DragDropContext>
-      </div>
+    <div>
+      <DndProvider backend={HTML5Backend}>
+        <div className="dashContainer">
+          <Button className="addBtn" onClick={handleOpenAdd}>
+            Add Task
+          </Button>
+          <div className="innerDashContainer">
+            {Object.entries(columns).map(([columnId, column]) => (
+              <Column
+                key={columnId}
+                columnId={columnId}
+                column={column}
+                moveTask={(dragIndex, hoverIndex, sourceColumnId) =>
+                  moveTask(dragIndex, hoverIndex, sourceColumnId, columnId)
+                }
+                handleDelete={handleDelete}
+                handleOpenEdit={handleOpenEdit}
+                handleOpenView={handleOpenView}
+              />
+            ))}
+          </div>
+        </div>
+      </DndProvider>
 
       <Dialog open={openAdd} onClose={handleCloseAdd}>
         <DialogTitle>Add New Task</DialogTitle>
