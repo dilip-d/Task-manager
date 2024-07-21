@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/Header.css";
+import AodIcon from "@mui/icons-material/Aod";
 
 const Header = () => {
   const { isLoggedIn, logout } = useAuth();
@@ -16,7 +17,9 @@ const Header = () => {
     <header className="main">
       <nav className="list">
         <div>
-          <Link to="/">Home</Link>
+          <Link to="/dashboard">
+            <AodIcon />
+          </Link>
         </div>
         <div>
           {isLoggedIn ? (
